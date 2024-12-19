@@ -13,6 +13,7 @@ namespace LiveKit
     {
         TextureFormat _textureFormat;
         private RenderTexture _tempTexture;
+        private readonly VideoRotation _inverseVideoRotation;
 
         public WebCamTexture Texture { get; }
 
@@ -28,12 +29,19 @@ namespace LiveKit
 
         protected override VideoRotation GetVideoRotation()
         {
-            return VideoRotation._180;
+            return _inverseVideoRotation;
         }
 
         public WebCameraSource(WebCamTexture texture, VideoBufferType bufferType = VideoBufferType.Rgba) : base(VideoStreamSource.Texture, bufferType)
         {
             Texture = texture;
+            _inverseVideoRotation = texture.videoRotationAngle switch
+            {
+                0 => VideoRotation._180,
+                90 => VideoRotation._90,
+                180 => VideoRotation._0,
+                270 => VideoRotation._270,
+            };
             base.Init();
         }
 
