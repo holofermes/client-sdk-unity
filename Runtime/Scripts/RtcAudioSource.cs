@@ -1,10 +1,8 @@
 using System;
-using UnityEngine;
 using LiveKit.Proto;
 using LiveKit.Internal;
 using System.Threading;
 using LiveKit.Internal.FFIClients.Requests;
-using System.Collections.Generic;
 
 namespace LiveKit
 {
@@ -34,14 +32,12 @@ namespace LiveKit
         private RtcAudioSourceType _sourceType;
 
         public RtcAudioSourceType SourceType => _sourceType;
-
-        private AudioSource _audioSource;
-        private AudioFilter _audioFilter;
+        private BaseAudioSource _audioSource;
 
         internal readonly FfiHandle Handle;
         protected AudioSourceInfo _info;
 
-        // Used on the AudioThread
+        // Possibly used on the AudioThread
         private Thread _readAudioThread;
         private ThreadSafeQueue<AudioFrame> _frameQueue = new ThreadSafeQueue<AudioFrame>();
 
@@ -49,14 +45,14 @@ namespace LiveKit
 
         public override bool Muted => _muted;
 
-        public RtcAudioSource(AudioSource source, RtcAudioSourceType audioSourceType = RtcAudioSourceType.AudioSourceCustom)
+        public RtcAudioSource(BaseAudioSource source, RtcAudioSourceType audioSourceType = RtcAudioSourceType.AudioSourceCustom)
         {
             _sourceType = audioSourceType;
 
             using var request = FFIBridge.Instance.NewRequest<NewAudioSourceRequest>();
             var newAudioSource = request.request;
             newAudioSource.Type = AudioSourceType.AudioSourceNative;
-            newAudioSource.NumChannels = DefaultChannels;
+            newAudioSource.NumChannels = source.Channels;
             if(_sourceType == RtcAudioSourceType.AudioSourceMicrophone)
             {
                 newAudioSource.SampleRate = DefaultMirophoneSampleRate;
@@ -82,16 +78,15 @@ namespace LiveKit
             _readAudioThread = new Thread(Update);
             _readAudioThread.Start();
 
-            _audioFilter.AudioRead += OnAudioRead;
-            while (!(Microphone.GetPosition(null) > 0)) { }
+            _audioSource.AudioRead += OnAudioRead;
             _audioSource.Play();
         }
 
         public void Stop()
         {
             _readAudioThread?.Abort();
-            if(_audioFilter) _audioFilter.AudioRead -= OnAudioRead;
-            if(_audioSource && _audioSource.isPlaying) _audioSource.Stop();
+            _audioSource.AudioRead -= OnAudioRead;
+            if(_audioSource is { IsPlaying: true }) _audioSource.Stop();
         }
 
         private void Update()
@@ -115,7 +110,6 @@ namespace LiveKit
                 v = Math.Max(v, -32768f);
                 return (short)(v + Math.Sign(v) * 0.5f);
             }
-
             unsafe
             {
                 var frameData = new Span<short>(frame.Data.ToPointer(), frame.Length / sizeof(short));
@@ -131,7 +125,6 @@ namespace LiveKit
             }
             _frameQueue.Enqueue(frame);
         }
-
 
         private void ReadAudio()
         {
@@ -169,15 +162,15 @@ namespace LiveKit
             }
         }
 
-        private void UpdateSource(AudioSource source)
+        private void UpdateSource(BaseAudioSource source)
         {
             _audioSource = source;
-            _audioFilter = source.gameObject.AddComponent<AudioFilter>();
         }
 
         public override void SetMute(bool muted)
         {
             _muted = muted;
         }
+
     }
 }
