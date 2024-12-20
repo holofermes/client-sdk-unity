@@ -13,9 +13,9 @@ namespace LiveKit
         public override bool IsPlaying => source.isPlaying;
         public override RtcAudioSourceType AudioSourceType => RtcAudioSourceType.AudioSourceMicrophone;
         public override uint Channels => 2;
+        public AudioSource Source => source;
         public override event Action<float[], int, int> AudioRead;
 
-        public AudioSource Source => source;
         private Action<float[], int, int> _audioRead;
         private string _deviceName;
 
