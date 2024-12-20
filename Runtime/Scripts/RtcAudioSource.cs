@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using LiveKit.Proto;
 using LiveKit.Internal;
 using System.Threading;
@@ -45,6 +46,8 @@ namespace LiveKit
 
         public override bool Muted => _muted;
 
+        public RtcAudioSource(BaseAudioSource source) : this(source, source.AudioSourceType) { }
+
         public RtcAudioSource(BaseAudioSource source, RtcAudioSourceType audioSourceType = RtcAudioSourceType.AudioSourceCustom)
         {
             _sourceType = audioSourceType;
@@ -70,6 +73,12 @@ namespace LiveKit
             _info = res.NewAudioSource.Source.Info;
             Handle = FfiHandle.FromOwnedHandle(res.NewAudioSource.Source.Handle);
             UpdateSource(source);
+        }
+
+        public IEnumerator PrepareAndStart()
+        {
+            yield return _audioSource.Prepare();
+            Start();
         }
 
         public void Start()
