@@ -10,7 +10,7 @@ namespace LiveKit
     public class AudioStream
     {
         internal readonly FfiHandle Handle;
-        private BaseAudioSource _audioSource;
+        public RtcAudioSource AudioSource { get; private set; }
         private RingBuffer _buffer;
         private short[] _tempBuffer;
         private uint _numChannels;
@@ -18,7 +18,9 @@ namespace LiveKit
         private AudioResampler _resampler = new AudioResampler();
         private object _lock = new object();
 
-        public AudioStream(IAudioTrack audioTrack, BaseAudioSource source)
+        public AudioStream(IAudioTrack audioTrack, AudioSource source) : this(audioTrack, new BasicAudioSource(source)) { }
+
+        public AudioStream(IAudioTrack audioTrack, RtcAudioSource source)
         {
             if (!audioTrack.Room.TryGetTarget(out var room))
                 throw new InvalidOperationException("audiotrack's room is invalid");
@@ -39,10 +41,10 @@ namespace LiveKit
             UpdateSource(source);
         }
 
-        private void UpdateSource(BaseAudioSource source)
+        private void UpdateSource(RtcAudioSource source)
         {
-            _audioSource = source;
-            _audioSource.AudioRead += OnAudioRead;
+            AudioSource = source;
+            AudioSource.AudioRead += OnAudioRead;
             source.Play();
         }
 

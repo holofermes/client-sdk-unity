@@ -15,8 +15,12 @@ namespace LiveKit
         AudioSourceMicrophone = 1,
     }
 
-    public class RtcAudioSource : IRtcSource
+    public abstract class RtcAudioSource : IRtcSource
     {
+        public abstract event Action<float[], int, int> AudioRead;
+        public virtual IEnumerator Prepare(float timeout = 0) { yield break;  }
+        public abstract void Play();
+
 #if UNITY_IOS
         // iOS microphone sample rate is 24k,
         // please make sure when you using 
@@ -33,7 +37,6 @@ namespace LiveKit
         private RtcAudioSourceType _sourceType;
 
         public RtcAudioSourceType SourceType => _sourceType;
-        private BaseAudioSource _audioSource;
 
         internal readonly FfiHandle Handle;
         protected AudioSourceInfo _info;
@@ -43,19 +46,16 @@ namespace LiveKit
         private ThreadSafeQueue<AudioFrame> _frameQueue = new ThreadSafeQueue<AudioFrame>();
 
         private bool _muted = false;
-
         public override bool Muted => _muted;
 
-        public RtcAudioSource(BaseAudioSource source) : this(source, source.AudioSourceType) { }
-
-        public RtcAudioSource(BaseAudioSource source, RtcAudioSourceType audioSourceType = RtcAudioSourceType.AudioSourceCustom)
+        protected RtcAudioSource(int channels = 2, RtcAudioSourceType audioSourceType = RtcAudioSourceType.AudioSourceCustom)
         {
             _sourceType = audioSourceType;
 
             using var request = FFIBridge.Instance.NewRequest<NewAudioSourceRequest>();
             var newAudioSource = request.request;
             newAudioSource.Type = AudioSourceType.AudioSourceNative;
-            newAudioSource.NumChannels = source.Channels;
+            newAudioSource.NumChannels = (uint)channels;
             if(_sourceType == RtcAudioSourceType.AudioSourceMicrophone)
             {
                 newAudioSource.SampleRate = DefaultMirophoneSampleRate;
@@ -72,12 +72,11 @@ namespace LiveKit
             FfiResponse res = response;
             _info = res.NewAudioSource.Source.Info;
             Handle = FfiHandle.FromOwnedHandle(res.NewAudioSource.Source.Handle);
-            UpdateSource(source);
         }
 
         public IEnumerator PrepareAndStart()
         {
-            yield return _audioSource.Prepare();
+            yield return Prepare();
             Start();
         }
 
@@ -87,15 +86,14 @@ namespace LiveKit
             _readAudioThread = new Thread(Update);
             _readAudioThread.Start();
 
-            _audioSource.AudioRead += OnAudioRead;
-            _audioSource.Play();
+            AudioRead += OnAudioRead;
+            Play();
         }
 
-        public void Stop()
+        public virtual void Stop()
         {
             _readAudioThread?.Abort();
-            _audioSource.AudioRead -= OnAudioRead;
-            if(_audioSource is { IsPlaying: true }) _audioSource.Stop();
+            AudioRead -= OnAudioRead;
         }
 
         private void Update()
@@ -169,11 +167,6 @@ namespace LiveKit
                     Utils.Error("Audio Framedata error: " + e.Message);
                 }
             }
-        }
-
-        private void UpdateSource(BaseAudioSource source)
-        {
-            _audioSource = source;
         }
 
         public override void SetMute(bool muted)
