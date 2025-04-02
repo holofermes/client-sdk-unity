@@ -529,6 +529,8 @@ namespace LiveKit
 
         private void OnDisconnectReceived(DisconnectCallback e)
         {
+            OnDisconnect();
+            Disconnected?.Invoke(DisconnectReason.ClientInitiated);
             FfiClient.Instance.DisconnectReceived -= OnDisconnectReceived;
             Utils.Debug($"OnDisconnect.... {e}");
         }
