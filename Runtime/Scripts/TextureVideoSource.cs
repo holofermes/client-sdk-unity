@@ -10,6 +10,7 @@ namespace LiveKit
     public class TextureVideoSource : RtcVideoSource
     {
         TextureFormat _textureFormat;
+        private readonly VideoRotation _rotation;
 
         public Texture Texture { get; }
 
@@ -25,12 +26,13 @@ namespace LiveKit
 
         protected override VideoRotation GetVideoRotation()
         {
-            return VideoRotation._0;
+            return _rotation;
         }
 
-        public TextureVideoSource(Texture texture, VideoBufferType bufferType = VideoBufferType.Rgba) : base(VideoStreamSource.Texture, bufferType)
+        public TextureVideoSource(Texture texture, VideoBufferType bufferType = VideoBufferType.Rgba, VideoRotation rotation = VideoRotation._0) : base(VideoStreamSource.Texture, bufferType)
         {
             Texture = texture;
+            _rotation = rotation;
             base.Init();
         }
 
