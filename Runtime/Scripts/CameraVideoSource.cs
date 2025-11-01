@@ -42,7 +42,16 @@ namespace LiveKit
         ~CameraVideoSource()
         {
             Dispose(false);
-            ClearRenderTexture();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposed && disposing)
+            {
+                ClearRenderTexture();
+            }
+
+            base.Dispose(disposing);
         }
 
         public override void Stop()
@@ -57,6 +66,13 @@ namespace LiveKit
             {
                 var renderText = _renderTexture as RenderTexture;
                 renderText.Release(); // can only be done on main thread
+                UnityEngine.Object.Destroy(_renderTexture);
+                _renderTexture = null;
+            }
+
+            if (Camera != null)
+            {
+                Camera.targetTexture = null;
             }
         }
 

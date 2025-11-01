@@ -42,7 +42,16 @@ namespace LiveKit
         ~ScreenVideoSource()
         {
             Dispose(false);
-            ClearRenderTexture();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposed && disposing)
+            {
+                ClearRenderTexture();
+            }
+
+            base.Dispose(disposing);
         }
 
         private void ClearRenderTexture()
@@ -51,6 +60,8 @@ namespace LiveKit
             {
                 var renderText = _renderTexture as RenderTexture;
                 renderText.Release(); // can only be done on main thread
+                UnityEngine.Object.Destroy(_renderTexture);
+                _renderTexture = null;
             }
         }
 
