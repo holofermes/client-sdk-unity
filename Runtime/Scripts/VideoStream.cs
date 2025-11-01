@@ -67,13 +67,23 @@ namespace LiveKit
 
         private void Dispose(bool disposing)
         {
-            if (!_disposed)
+            if (_disposed)
             {
-                if (disposing)
-                    VideoBuffer?.Dispose();
-                if (Texture != null) UnityEngine.Object.Destroy(Texture);
-                _disposed = true;
+                return;
             }
+
+            if (disposing)
+            {
+                VideoBuffer?.Dispose();
+
+                if (Texture != null)
+                {
+                    UnityEngine.Object.Destroy(Texture);
+                    Texture = null;
+                }
+            }
+
+            _disposed = true;
         }
 
         public virtual void Start()

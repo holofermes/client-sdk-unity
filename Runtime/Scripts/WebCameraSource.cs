@@ -45,6 +45,20 @@ namespace LiveKit
             Dispose(false);
         }
 
+        protected override void Dispose(bool disposing)
+        {
+            if (!_disposed && disposing)
+            {
+                if (_tempTexture != null)
+                {
+                    Object.Destroy(_tempTexture);
+                    _tempTexture = null;
+                }
+            }
+
+            base.Dispose(disposing);
+        }
+
         private Color32[] _readBuffer;
 
         // Read the texture data into a native array asynchronously

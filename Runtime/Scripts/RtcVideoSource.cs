@@ -204,13 +204,22 @@ namespace LiveKit
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
-            if (_previewTexture != null)
-                 UnityEngine.Object.Destroy(_previewTexture);
+
+            if (disposing)
+            {
+                if (_previewTexture != null)
+                {
+                    UnityEngine.Object.Destroy(_previewTexture);
+                    _previewTexture = null;
+                }
+            }
+
             if (_captureBuffer.IsCreated)
             {
                 Debug.Log("Disposing capture buffer");
                 _captureBuffer.Dispose();
             }
+
             _disposed = true;
         }
 
