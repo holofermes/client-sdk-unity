@@ -127,6 +127,8 @@ namespace LiveKit
         public delegate void ConnectionDelegate(Room room);
         public delegate void DisconnectDelegate(DisconnectReason reason);
         public delegate void E2EeStateChangedDelegate(Participant participant, EncryptionState state);
+        public delegate void TranscriptionReceivedDelegate(Transcription transcription, Participant participant);
+        public delegate void ChatMessageDelegate(ChatMessage message, Participant participant);
 
         public string Sid { private set; get; }
         public string Name { private set; get; }
@@ -157,6 +159,8 @@ namespace LiveKit
         public event ConnectionDelegate Reconnecting;
         public event ConnectionDelegate Reconnected;
         public event E2EeStateChangedDelegate E2EeStateChanged;
+        public event TranscriptionReceivedDelegate TranscriptionReceived;
+        public event ChatMessageDelegate ChatMessageReceived;
         public event MetaDelegate RoomMetadataChanged;
         public event ParticipantDelegate ParticipantMetadataChanged;
         public event ParticipantDelegate ParticipantNameChanged;
@@ -491,6 +495,21 @@ namespace LiveKit
                     {
                         var participant = GetParticipant(e.E2EeStateChanged.ParticipantIdentity);
                         E2EeStateChanged?.Invoke(participant, e.E2EeStateChanged.State);
+                    }
+                    break;
+                case RoomEvent.MessageOneofCase.TranscriptionReceived:
+                    {
+                        var participant = GetParticipant(e.TranscriptionReceived.ParticipantIdentity);
+                        var transcription = new Transcription(e.TranscriptionReceived);
+                        TranscriptionReceived?.Invoke(transcription, participant);
+                    }
+                    break;
+                case RoomEvent.MessageOneofCase.ChatMessage:
+                    {
+                        var msgReceived = e.ChatMessage;
+                        var participant = GetParticipant(msgReceived.ParticipantIdentity);
+                        var chatMessage = new ChatMessage(msgReceived.Message);
+                        ChatMessageReceived?.Invoke(chatMessage, participant);
                     }
                     break;
             }
