@@ -49,6 +49,9 @@ Shader "Hidden/LiveKit/YUV2RGB"
                 rgb.r = Y + half(1.79274107) * e;
                 rgb.g = Y - half(0.21324861) * d - half(0.53290933) * e;
                 rgb.b = Y + half(2.11240179) * d;
+                #if !defined(UNITY_COLORSPACE_GAMMA)
+                rgb = GammaToLinearSpace(rgb);
+                #endif
                 return saturate(rgb);
             }
 
