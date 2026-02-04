@@ -243,6 +243,21 @@ namespace LiveKit.Internal
                 switch (r?.MessageCase)
                 {
                     case FfiEvent.MessageOneofCase.Logs:
+#if LK_VERBOSE
+                        foreach (var record in r.Logs.Records)
+                        {
+                            var levelStr = record.Level switch
+                            {
+                                Proto.LogLevel.LogError => "ERROR",
+                                Proto.LogLevel.LogWarn => "WARN",
+                                Proto.LogLevel.LogInfo => "INFO",
+                                Proto.LogLevel.LogDebug => "DEBUG",
+                                Proto.LogLevel.LogTrace => "TRACE",
+                                _ => "???"
+                            };
+                            UnityEngine.Debug.Log($"[LiveKit Native][{levelStr}] {record.Target}: {record.Message}");
+                        }
+#endif
                         break;
                     case FfiEvent.MessageOneofCase.PublishData:
                         break;
