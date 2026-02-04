@@ -613,12 +613,12 @@ namespace LiveKit
             bool success = string.IsNullOrEmpty(e.Error);
             if (success)
             {
+                _room.OnConnect(e);
+                
                 if (_roomOptions.E2EE != null)
                 {
                     _room.E2EEManager = new E2EEManager(_room.RoomHandle, _roomOptions.E2EE);
                 }
-
-                _room.OnConnect(e);
             }
 
             IsError = !success;

@@ -29,6 +29,26 @@ namespace LiveKit
         public Proto.E2eeOptions ToProto()
         {
             var proto = new Proto.E2eeOptions();
+            
+            proto.EncryptionType = (Proto.EncryptionType)EncryptionType;
+            Utils.Debug($"E2EEOptions.ToProto: EncryptionType={EncryptionType}");
+            
+            if (KeyProviderOptions != null)
+            {
+                proto.KeyProviderOptions = new Proto.KeyProviderOptions();
+                if (KeyProviderOptions.SharedKey != null)
+                {
+                    proto.KeyProviderOptions.SharedKey = Google.Protobuf.ByteString.CopyFrom(KeyProviderOptions.SharedKey);
+                }
+                proto.KeyProviderOptions.RatchetWindowSize = KeyProviderOptions.RatchetWindowSize;
+                if (KeyProviderOptions.RatchetSalt != null)
+                    proto.KeyProviderOptions.RatchetSalt = Google.Protobuf.ByteString.CopyFrom(KeyProviderOptions.RatchetSalt);
+                proto.KeyProviderOptions.FailureTolerance = KeyProviderOptions.FailureTolerance;
+            }
+            else
+            {
+                Utils.Debug("E2EEOptions.ToProto: KeyProviderOptions is NULL!");
+            }
 
             return proto;
         }
@@ -167,10 +187,18 @@ namespace LiveKit
 
         public void setEnabled(bool enabled)
         {
-            using var request = FFIBridge.Instance.NewRequest<E2eeManagerSetEnabledRequest>();
+            if (RoomHandle == null || RoomHandle.IsInvalid)
+            {
+                Utils.Debug($"E2EEManager.setEnabled({enabled}) skipped - RoomHandle is invalid");
+                return;
+            }
+            
+            using var request = FFIBridge.Instance.NewRequest<Proto.E2eeRequest>();
             var e2ee = request.request;
-            e2ee.Enabled = enabled;
+            e2ee.RoomHandle = (ulong)RoomHandle.DangerousGetHandle();
+            e2ee.ManagerSetEnabled = new Proto.E2eeManagerSetEnabledRequest { Enabled = enabled };
             request.Send();
+            Utils.Debug($"E2EEManager.setEnabled({enabled}) sent successfully");
         }
 
         public List<FrameCryptor> frameCryptors()
